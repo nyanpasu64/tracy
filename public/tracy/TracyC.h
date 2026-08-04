@@ -287,6 +287,15 @@ TRACY_API int32_t ___tracy_connected(void);
 
 #define TracyCZoneEnd( ctx ) ___tracy_emit_zone_end( ctx );
 
+inline __attribute__((always_inline)) void cleanup_zone( TracyCZoneCtx * pCtx ) {
+    // #define TracyCZoneEnd( ctx ) ___tracy_emit_zone_end( ctx );
+    ___tracy_emit_zone_end(*pCtx);
+}
+
+#define TracyCZoneScoped( ctx, active ) \
+    static const struct ___tracy_source_location_data TracyConcat(__tracy_source_location,TracyLine) = { NULL, __func__,  TracyFile, (uint32_t)TracyLine, 0 }; \
+    __attribute__((cleanup(cleanup_zone))) TracyCZoneCtx ctx = ___tracy_emit_zone_begin_callstack( &TracyConcat(__tracy_source_location,TracyLine), TRACY_CALLSTACK, active );
+
 #define TracyCZoneText( ctx, txt, size ) ___tracy_emit_zone_text( ctx, txt, size );
 #define TracyCZoneTextF( ctx, fmt, ... ) ___tracy_emit_zone_text_fmt( ctx, fmt, ##__VA_ARGS__ );
 #define TracyCZoneName( ctx, txt, size ) ___tracy_emit_zone_name( ctx, txt, size );

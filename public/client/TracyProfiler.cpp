@@ -4723,6 +4723,8 @@ TRACY_API void ___tracy_emit_zone_end( TracyCZoneCtx ctx )
     }
 }
 
+extern inline void cleanup_zone( TracyCZoneCtx * pCtx );
+
 TRACY_API void ___tracy_emit_zone_text( TracyCZoneCtx ctx, const char* txt, size_t size )
 {
     assert( size < std::numeric_limits<uint16_t>::max() );
