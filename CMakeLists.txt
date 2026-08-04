@@ -37,25 +37,18 @@ find_package(rocprofiler-sdk PATHS "/opt/rocm/lib/cmake")
 
 set(TRACY_PUBLIC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/public)
 
-if(LTO_SUPPORTED)
-    set(TRACY_VISIBILITY "OBJECT")
-elseif(TRACY_STATIC)
-    set(TRACY_VISIBILITY "STATIC")
-else()
-    set(TRACY_VISIBILITY "SHARED")
-endif()
-
-add_library(TracyClient ${TRACY_VISIBILITY} "${TRACY_PUBLIC_DIR}/TracyClient.cpp")
+# Add "${TRACY_PUBLIC_DIR}/TracyClient.cpp" to your project sources.
+add_library(TracyClient STATIC ${TRACY_PUBLIC_DIR}/null.cpp)
 target_compile_features(TracyClient PUBLIC cxx_std_11)
 set_target_properties(TracyClient PROPERTIES INTERPROCEDURAL_OPTIMIZATION ${LTO_SUPPORTED})
 target_include_directories(TracyClient SYSTEM PUBLIC
     $<BUILD_INTERFACE:${TRACY_PUBLIC_DIR}>
     $<INSTALL_INTERFACE:include/tracy>)
+target_compile_definitions(TracyClient PUBLIC TRACY_PLATFORM_HEADER="tracy_switch.hpp")
 target_link_libraries(
     TracyClient
     PUBLIC
         Threads::Threads
-        ${CMAKE_DL_LIBS}
 )
 if(rocprofiler-sdk_FOUND)
     target_compile_definitions(TracyClient PUBLIC TRACY_ROCPROF)

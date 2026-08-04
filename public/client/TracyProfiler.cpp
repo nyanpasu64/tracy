@@ -1330,7 +1330,7 @@ static ProfilerData& GetProfilerData()
 // if this function is compiled into a shared object. Unfortunately, centos7 ships with glibc 2.17. If running
 // on old GCC, use the old-fashioned way as a workaround
 // See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85400
-#if !defined(__clang__) && defined(__GNUC__) && ((__GNUC__ < 8) || ((__GNUC__ == 8) && (__GNUC_MINOR__ < 4)))
+#if (!defined(__clang__) && defined(__GNUC__) && ((__GNUC__ < 8) || ((__GNUC__ == 8) && (__GNUC_MINOR__ < 4)))) || defined(__SWITCH__)
 struct ProfilerThreadDataKey
 {
 public:
@@ -4444,6 +4444,7 @@ void Profiler::HandleSymbolCodeQuery( uint64_t symbol, uint32_t size )
 void Profiler::HandleSourceCodeQuery( char* data, char* image, uint32_t id )
 {
     bool ok = false;
+#ifndef __SWITCH__
     FILE* f = fopen( data, "rb" );
     if( f )
     {
@@ -4510,6 +4511,7 @@ void Profiler::HandleSourceCodeQuery( char* data, char* image, uint32_t id )
         TracyDebug( "DebugInfo invalid query fn: %s, image: %s", data, image );
     }
 #endif
+#endif //!defined __SWITCH__
 
     if( !ok && m_sourceCallback )
     {

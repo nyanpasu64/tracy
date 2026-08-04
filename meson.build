@@ -223,6 +223,13 @@ tracy_compile_args += tracy_common_args
 
 tracy_deps = [dependency('threads')] + tracy_public_deps
 
+tracy_native = library('tracy_native', tracy_src, tracy_header_files,
+    dependencies        : tracy_deps,
+    include_directories : tracy_public_include_dirs,
+    cpp_args            : tracy_compile_args,
+    override_options    : override_options,
+    native              : true)
+
 tracy = library('tracy', tracy_src, tracy_header_files,
     dependencies        : tracy_deps,
     include_directories : tracy_public_include_dirs,
@@ -251,4 +258,11 @@ tracy_dep = declare_dependency(
     link_with           : tracy,
     include_directories : tracy_public_include_dirs)
 
+tracy_native_dep = declare_dependency(
+    compile_args        : tracy_dep_compile_args,
+    link_with           : tracy_native,
+    include_directories : tracy_public_include_dirs)
+
+
 meson.override_dependency('tracy', tracy_dep)
+meson.override_dependency('tracy_native', tracy_native_dep)

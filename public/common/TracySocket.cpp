@@ -479,7 +479,16 @@ static int addrinfo_and_socket_for_family( uint16_t port, int ai_family, struct 
 #endif
     char portbuf[32];
     sprintf( portbuf, "%" PRIu16, port );
-    if( getaddrinfo( nullptr, portbuf, &hints, res ) != 0 ) return -1;
+    int error = getaddrinfo( 
+#ifdef __SWITCH__
+        "0.0.0.0",
+#else
+        nullptr, 
+#endif
+        portbuf, 
+        &hints, 
+        res );
+    if( error != 0 ) return -1;
     int sock = socket( (*res)->ai_family, (*res)->ai_socktype, (*res)->ai_protocol );
     if (sock == -1) freeaddrinfo( *res );
     return sock;

@@ -167,7 +167,9 @@ static DWORD fls_key;
 #endif
 
 #if PLATFORM_POSIX
+#ifndef __SWITCH__
 #  include <sys/mman.h>
+#endif
 #  include <sched.h>
 #  ifdef __FreeBSD__
 #    include <sys/sysctl.h>
@@ -697,7 +699,7 @@ static pthread_key_t _memory_thread_heap;
 #    else
 #      define TLS_MODEL
 #    endif
-#    if !defined(__clang__) && defined(__GNUC__)
+#    if !defined(__clang__) && defined(__GNUC__) && !defined(__SWITCH__)
 #      define _Thread_local __thread
 #    endif
 #  endif
@@ -887,6 +889,17 @@ _rpmalloc_mmap_os(size_t size, size_t* offset) {
 		}
 		return 0;
 	}
+#elif defined(__SWITCH__)
+void* ptr = malloc(size + padding);
+if (!ptr) {
+    if (_memory_config.map_fail_callback) {
+        if (_memory_config.map_fail_callback(size + padding))
+            return _rpmalloc_mmap_os(size, offset);
+    } else {
+        rpmalloc_assert(ptr, "Failed to map virtual memory block");
+    }
+    return 0;
+}
 #else
 	int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_UNINITIALIZED;
 #  if defined(__APPLE__) && !TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR
@@ -960,6 +973,8 @@ _rpmalloc_unmap_os(void* address, size_t size, size_t offset, size_t release) {
 	if (!VirtualFree(address, release ? 0 : size, release ? MEM_RELEASE : MEM_DECOMMIT)) {
 		rpmalloc_assert(0, "Failed to unmap virtual memory block");
 	}
+#elif defined(__SWITCH__)
+    free(address);
 #else
 	if (release) {
 		if (munmap(address, release)) {
@@ -2727,7 +2742,9 @@ rpmalloc_initialize_config(const rpmalloc_config_t* config) {
 	GetSystemInfo(&system_info);
 	_memory_map_granularity = system_info.dwAllocationGranularity;
 #else
+#ifndef __SWITCH__
 	_memory_map_granularity = (size_t)sysconf(_SC_PAGESIZE);
+#endif
 #endif
 
 #if RPMALLOC_CONFIGURABLE

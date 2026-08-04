@@ -7,7 +7,7 @@
 #  include TRACY_PLATFORM_HEADER
 #endif
 
-#if defined TRACY_ENABLE && !defined __EMSCRIPTEN__
+#if defined TRACY_ENABLE && !defined __EMSCRIPTEN__ && !defined __SWITCH__
 #  include "TracyApi.h"
 #  include "TracyForceInline.hpp"
 #  if !defined TRACY_HAS_CUSTOM_ALLOCATOR
