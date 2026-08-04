@@ -1456,6 +1456,7 @@ thread_local bool RpThreadShutdown = false;
 moodycamel::ConcurrentQueue<QueueItem> init_order(103) s_queue( QueuePrealloc );
 
 #  ifndef _MSC_VER
+#ifndef __SWITCH__
 // An instrumented shared object may emit zones from its static initializers, which the
 // dynamic loader runs before any of the executable's constructors, including the
 // priority-ordered constructor of s_queue above. The main thread producer token (s_token)
@@ -1468,6 +1469,7 @@ struct EarlyMainThreadTokenRepair
     EarlyMainThreadTokenRepair() { if( s_token.ptr ) s_queue.readopt_orphaned_producer( s_token.ptr ); }
 };
 static EarlyMainThreadTokenRepair init_order(104) s_earlyMainThreadTokenRepair;
+#endif
 #  endif
 
 std::atomic<uint32_t> init_order(104) s_lockCounter( 0 );
