@@ -26,10 +26,11 @@ public:
 #ifdef TRACY_MANUAL_LIFETIME
 #  if defined TRACY_HAS_CUSTOM_ALLOCATOR
         PlatformAllocatorThreadFinalize();
+        RpThreadInitDone = false;
 #  elif defined TRACY_USE_RPMALLOC
         rpmalloc_thread_finalize( 1 );
-#  endif
         RpThreadInitDone = false;
+#  endif
 #endif
     }
 };

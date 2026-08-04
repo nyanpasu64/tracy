@@ -87,6 +87,10 @@
 #  error "TRACY_MANUAL_LIFETIME requires enabled TRACY_DELAYED_INIT"
 #endif
 
+#if defined __SWITCH__ && !defined(TRACY_DELAYED_INIT)
+#  error "TRACY_DELAYED_INIT is required to avoid thread_local crashes on Switch"
+#endif
+
 #ifdef TRACY_PORT
 #  ifndef TRACY_DATA_PORT
 #    define TRACY_DATA_PORT TRACY_PORT
@@ -1261,10 +1265,12 @@ struct ProfilerThreadData
 #  endif
 };
 
+#if defined TRACY_HAS_CUSTOM_ALLOCATOR || defined TRACY_USE_RPMALLOC
 std::atomic<int> RpInitDone { 0 };
 std::atomic<int> RpInitLock { 0 };
 thread_local bool RpThreadInitDone = false;
 thread_local bool RpThreadShutdown = false;
+#endif
 
 #  ifdef TRACY_MANUAL_LIFETIME
 ProfilerData* s_profilerData = nullptr;
@@ -1294,8 +1300,10 @@ TRACY_API void ShutdownProfiler()
 #elif defined TRACY_USE_RPMALLOC
     rpmalloc_finalize();
 #endif
+#if defined TRACY_HAS_CUSTOM_ALLOCATOR || defined TRACY_USE_RPMALLOC
     RpThreadInitDone = false;
     RpInitDone.store( 0, std::memory_order_release );
+#endif
 }
 TRACY_API bool IsProfilerStarted()
 {
@@ -1456,7 +1464,6 @@ thread_local bool RpThreadShutdown = false;
 moodycamel::ConcurrentQueue<QueueItem> init_order(103) s_queue( QueuePrealloc );
 
 #  ifndef _MSC_VER
-#ifndef __SWITCH__
 // An instrumented shared object may emit zones from its static initializers, which the
 // dynamic loader runs before any of the executable's constructors, including the
 // priority-ordered constructor of s_queue above. The main thread producer token (s_token)
@@ -1469,7 +1476,6 @@ struct EarlyMainThreadTokenRepair
     EarlyMainThreadTokenRepair() { if( s_token.ptr ) s_queue.readopt_orphaned_producer( s_token.ptr ); }
 };
 static EarlyMainThreadTokenRepair init_order(104) s_earlyMainThreadTokenRepair;
-#endif
 #  endif
 
 std::atomic<uint32_t> init_order(104) s_lockCounter( 0 );
@@ -1504,7 +1510,13 @@ TRACY_API LuaZoneState& GetLuaZoneState() { return s_luaZoneState; }
 #endif
 
 TRACY_API bool ProfilerAvailable() { return s_instance != nullptr; }
-TRACY_API bool ProfilerAllocatorAvailable() { return !RpThreadShutdown; }
+TRACY_API bool ProfilerAllocatorAvailable() {
+#if defined TRACY_HAS_CUSTOM_ALLOCATOR || defined TRACY_USE_RPMALLOC
+    return !RpThreadShutdown;
+#else
+    return true;
+#endif
+}
 
 TRACY_API bool BeginSamplingProfiling() { return GetProfiler().BeginSamplingProfiling(); }
 TRACY_API void EndSamplingProfiling() { return GetProfiler().EndSamplingProfiling(); }
