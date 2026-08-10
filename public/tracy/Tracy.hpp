@@ -127,6 +127,13 @@
 #define TracyFiberEnterHint(x,y)
 #define TracyFiberLeave
 
+#ifdef TRACY_MANUAL_LIFETIME
+namespace tracy {
+    inline void StartupProfiler() {}
+    inline void ShutdownProfiler() {}
+}
+#endif
+
 #else
 
 #include <string.h>
@@ -164,7 +171,7 @@
         _Pragma("GCC diagnostic ignored \"-Wshadow\"") \
         Expr; \
         _Pragma("GCC diagnostic pop")
-#elif defined(_MSC_VER) 
+#elif defined(_MSC_VER)
     #define SuppressVarShadowWarning(Expr) \
         _Pragma("warning(push)") \
         _Pragma("warning(disable : 4456)") \
